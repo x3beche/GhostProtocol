@@ -8,5 +8,5 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 
 <p>&nbsp;</p>
 <p align="center">
-<img width="900" height="653" src="https://raw.githubusercontent.com/x3beche/GhostProtocol/main/gp.png">
+<img width="900" height="653" src="https://raw.githubusercontent.com/x3beche/GhostProtocol/main/Documents/gp.png">
 </p>
