@@ -17,7 +17,7 @@ def f_decrypt(oW,nW,rtry):
     return rtry[1][chc-1]
 
 def keyComplier(fn):
-    fn='key'+str(fn)+'.ax'
+    fn='ax45sEngine/key'+str(fn)+'.ax'
     f=open(fn,'r')
     klst=f.read().replace('\n','').split('split')
     f.close()

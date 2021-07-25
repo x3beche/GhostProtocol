@@ -1,4 +1,4 @@
-import curses,time,random,serial,serial.tools.list_ports
+import curses,time,random,serial,sqlite3
 from ax45sEngine.algorithms import axen,axde
 
 banner1 = [
@@ -18,64 +18,27 @@ banner2 = [
 ,"                                                                                      "
 ,"                           Powered by AX45-S Algorithm                                "]
 
-def module_config():
-    global COM
-    global NODE
-    global so
-    global se
-    global KEY
-    global BAUD
-    global datasize
-    global PORTS
-    global NODE_CACHE
-    global MODE
-    global datasets_de
-    global dataset_de
-    global PACKAGE_QUE
-    PACKAGE_QUE=0
-    KEY=237415
-    BAUD=115200
-    datasize=0
-    PORTS=[]
-    NODE_CACHE="NULL"
-    MODE="IDLE"
-    datasets_de=[]
-    dataset_de=""
-    so="STREAM-ORIGIN"
-    se="STREAM-END"
-
-    for i in serial.tools.list_ports.comports():
-        PORTS.append(str(i).split(" ")[0])
-    for i in range(0,len(PORTS)):
-        print(str(i+1)+"-) "+PORTS[i])
-    i = input("Select COM Port : ")
-    COM=PORTS[int(i)-1]
-    NODE = input("Select NODE Name : ")
-    if NODE=="NULL":
-        NODE = input("NULL cannot be selected please enter another NODE Name : ")
-    MODE=input("ENTER The Mode : ")
 def main(scr):
     ser = serial.Serial(COM,BAUD)
     curses.curs_set(0)
     h,w = scr.getmaxyx()
     def startup():
+
+
         for x in range(0,len(banner1)):
             scr.addstr(h//8-len(banner2)//2+x,        w//2-len(banner2[6])//2,        banner1[x])
-        #curses.wrapper(interm)
         curses.wrapper(data)
         scr.refresh()
         time.sleep(0.8)
         scr.clear()
         for x in range(0,len(banner2)):
             scr.addstr(h//8-len(banner2)//2+x,        w//2-len(banner2[6])//2,        banner2[x])
-        #curses.wrapper(interm)
         curses.wrapper(data)
         scr.refresh()
         time.sleep(0.2)
         scr.clear()
         for x in range(0,len(banner1)):
             scr.addstr(h//8-len(banner2)//2+x,        w//2-len(banner2[6])//2,        banner1[x])
-        #curses.wrapper(interm)
         curses.wrapper(data)
         scr.refresh()
         time.sleep(0.8)
@@ -107,6 +70,7 @@ def main(scr):
         win.refresh()
         begin_xz = w//32 ; begin_yz = h//4+28
         heightz = 9 ; widthz = w//2-4
+
         sendbox = curses.newwin(heightz, widthz, begin_yz, begin_xz)
         sendbox.box()
         sendbox.refresh()
@@ -159,14 +123,27 @@ def main(scr):
         win.addstr(0,widthf-5," X ")
         win.attroff(curses.color_pair(2))
         win.refresh()
+
         data_fallscreen=[]
         command_fall_screen=[]
+
         command_fall_screen.append("gate@root:~ Connecting to Serial "+COM+"...")
         command_fall_screen.append("gate@root:~ Serial Connection Success")
         command_fall_screen.append("gate@root:~ Transferring to data fall screen...")
 
-
-
+        def convertTuple(tup):
+            str = ''
+            for item in tup:
+                str = str + item
+            return str
+        def newMessageCheck():
+            cursor.execute("SELECT confirm FROM tx;")
+            SQL_STAT_CHECK_TUP=cursor.fetchall()
+            SQL_STAT_CHECK_STR=[]
+            for TUP_STAT in SQL_STAT_CHECK_TUP:
+                SQL_STAT_CHECK_STR.append(convertTuple(TUP_STAT))
+            NEGATIVE_COUNT=SQL_STAT_CHECK_STR.count("negative")
+            return NEGATIVE_COUNT
         def TX(DATA,NODE):
             def gtx(data):
                 global KEY
@@ -179,14 +156,6 @@ def main(scr):
                 datasets = [datasets[i:i+n] for i in range(0, len(datasets), n)]
                 command_fall_screen.append("gate@root:~ "+str(len(datasets))+" Package Stacked")
                 command_fall_screen.append("gate@root:~ Switching to TX Mode")
-
-
-
-
-
-
-
-
 
                 tx_start="STREAM-ORIGIN+"+str(len(data))+"+"+NODE+"\r\n"
                 ser.write(tx_start.encode())
@@ -267,9 +236,12 @@ def main(scr):
 
                     while cont==True:
                         a = ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-                        datasets_de.append(a)
-                        command_fall_screen.append("nrf24l01@root:~ code[200] DataRX ----> "+a)
-                        win_call()
+                        if a==datasets_de[-1]:
+                            pass
+                        else:
+                            datasets_de.append(a)
+                            command_fall_screen.append("nrf24l01@root:~ code[200] DataRX ----> "+a)
+                            win_call()
                         if a[:10]==se:
                             cont=False
 
@@ -277,9 +249,9 @@ def main(scr):
                     dataset_de=dataset_de+datasets_de[x]
                 dataset_de=axde(dataset_de,KEY)
 
-
                 if (len(dataset_de)==int(datasize)) and (datasize != 0) and (NODE_CACHE!="NULL") and (datasize!=0):
                     command_fall_screen.append("gate@root:~ Transmit Succes No Packet Loss")
+
                     data_call(NODE_CACHE,dataset_de)
                     win_call()
 
@@ -441,43 +413,84 @@ def main(scr):
 
             sendbox.addstr(6,2,str(" [Node: "+NODE+" / Port: "+COM+" / Baud Rate: "+str(BAUD)+" / KEY: key"+str(KEY)+".ax]"))
             sendbox.refresh()
-        win_call()
 
+
+        win_call()
         MODE="RX"
-        st=time.time()
+        tx_id_count=0
         while True:
 
-            et=time.time()
 
-            if et-st>7:
-                MODE="TX"
+            if newMessageCheck()>=1:
+                cursor.execute("SELECT msg,confirm FROM tx;")
+                SQL_TX_DATA=cursor.fetchall()
 
+                for x in range(0,len(SQL_TX_DATA)):
+                    if SQL_TX_DATA[x][1]=="negative":
+                        cursor.execute('Update tx set confirm ="{}" where tx_id = {}'.format("positive",x+1))
+                        DATA=convertTuple(SQL_TX_DATA[x][0])
+                        MODE="TX"
+                        db.commit()
+                        break
 
 
             if MODE=="IDLE":
                 pass
 
             elif MODE=="TX":
-                DATA=str(random.randint(0,10**100))
                 TX(DATA,NODE)
-                st=time.time()
                 MODE="RX"
 
             elif MODE=="RX":
                 RX()
 
-
-
-
-
-
-
-
-
-
     startup()
     curses.wrapper(data)
     curses.wrapper(main)
     curses.wrapper(sendbox)
+
+
+
+def module_config():
+    global db
+    global cursor
+    global COM
+    global NODE
+    global KEY
+    global so
+    global se
+    global BAUD
+    global datasize
+    global PORTS
+    global NODE_CACHE
+    global MODE
+    global datasets_de
+    global dataset_de
+    global PACKAGE_QUE
+    PACKAGE_QUE=0
+    BAUD=115200
+    datasize=0
+    NODE_CACHE="NULL"
+    MODE="IDLE"
+    datasets_de=[]
+    dataset_de=""
+    so="STREAM-ORIGIN"
+    se="STREAM-END"
+
+    db = sqlite3.connect('ghostprotocol.db')
+    cursor = db.cursor()
+
+    def convertTuple(tup):
+        str = ''
+        for item in tup:
+            str = str + item
+        return str
+
+    cursor.execute("SELECT settings FROM conf;")
+    datacache=cursor.fetchall()
+    NODE=convertTuple(datacache[0])
+    COM=convertTuple(datacache[1])
+    KEY=int(convertTuple(datacache[2]))
+    datacache=[]
 module_config()
 curses.wrapper(main)
