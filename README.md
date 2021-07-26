@@ -6,11 +6,11 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 
 <div align="center">  
 
-| Stages      | Improvement                         | Status |
-| ----------- | ----------------------------------- | :----: |
-| First       | Message transfer                    |✅      |
-| Second      | Image transfer                      |❌      |
-| Third       | Real-time streaming and mobile mesh |❌      |
+| Stages      | Improvement                               | Status |
+| ----------- | ----------------------------------------- | :----: |
+| First       | Message transfer                          |✅      |
+| Second      | Image transfer                            |❌      |
+| Third       | Real-time audio streaming and mobile mesh |❌      |
 
 | Network Speed | Range       | Module    |
 | :-----------: | ----------- | --------- |
