@@ -5,15 +5,9 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 
 | Stages      | Improvement |
 | ----------- | ----------- |
-| First       | Text        |
-| Second      | Text        |
-| Third       | Text        |
-
-
-
-- first stage  -> message transfer
-- second stage -> image transfer
-- third stage  -> real-time streaming and mobile mesh
+| First       | Message transfer        |
+| Second      | Image transfer        |
+| Third       | Real-time streaming and mobile mesh        |
 
 <p>&nbsp;</p>
 <p align="center">
