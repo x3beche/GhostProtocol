@@ -8,21 +8,70 @@ banner1 = [
 ,"    / /_/ / / / / /_/ (__  ) /_   / ____/ /  / /_/ / /_/ /_/ / /__/ /_/ / /           "
 ,"    \____/_/ /_/\____/____/\__/  /_/   /_/   \____/\__/\____/\___/\____/_/            "
 ,"                                                                                      "
-,"                           Powered by AX45-S Algorithm                                "]
+,"             GProtocol Main Framework & Powered by AX45-S Algorithm                   "]
 banner2 = [
-"       ________               __     ____             __                   __         "
-,"         / ____/ /_  ____  _____/ /_   / __ \_________  / /_____  _________  / /         "
-,"   / / __/ __ \/ __ \/ ___/ __/  / /_/ / ___/ __ \/ __/ __ \/ ___/ __ \/ /          "
-,"      / /_/ / / / / /_/ (__  ) /_   / ____/ /  / /_/ / /_/ /_/ / /__/ /_/ / /           "
-,"  \____/_/ /_/\____/____/\__/  /_/   /_/   \____/\__/\____/\___/\____/_/            "
+"       _  ___ _               __     _  _             __                   __         "
+,"         / ____/ /_  ____  _____/ /_   / __ \_________  / /_____  ____  ___  / /         "
+,"   / / __/ __ \/ __ \  ___/ __/  / /_/ / ___/ __ \/ __/ __ \/ ___/ __ \/ /          "
+,"      / /_/ / / / / /_/ (__  ) /_   / ____/ /  / /_/ / /_  /_/ / /__/ /_/ / /           "
+,"  \____/_/ /_/\_ __/____/\__/  /_/   /_/   \__ _/\__/\____/\___/\____/_/             "
 ,"                                                                                      "
-,"                           Powered by AX45-S Algorithm                                "]
+,"             GProtocol Main Framework & Powered by AX45-S Algorithm                   "]
 
+
+def module_config():
+    global db
+    global cursor
+    global COM
+    global NODE
+    global KEY
+    global so
+    global se
+    global BAUD
+    global datasize
+    global PORTS
+    global NODE_CACHE
+    global MODE
+    global datasets_de
+    global dataset_de
+    global PACKAGE_QUE
+    PACKAGE_QUE=0
+    BAUD=115200
+    datasize=0
+    NODE_CACHE="NULL"
+    MODE="IDLE"
+    datasets_de=[]
+    dataset_de=""
+    so="STREAM-ORIGIN"
+    se="STREAM-END"
+
+    db = sqlite3.connect('ghostprotocol.db')
+    cursor = db.cursor()
+
+    def convertTuple(tup):
+        str = ''
+        for item in tup:
+            str = str + item
+        return str
+
+    cursor.execute("SELECT settings FROM conf;")
+    datacache=cursor.fetchall()
+    NODE=convertTuple(datacache[0])
+    COM=convertTuple(datacache[1])
+    KEY=int(convertTuple(datacache[2]))
+    datacache=[]
 def main(scr):
-    ser = serial.Serial(COM,BAUD)
-    curses.curs_set(0)
-    h,w = scr.getmaxyx()
+
+
     def startup():
+        global ser
+        global h
+        global w
+
+        ser = serial.Serial(COM,BAUD)
+        curses.curs_set(0)
+        h,w = scr.getmaxyx()
+
 
 
         for x in range(0,len(banner1)):
@@ -126,11 +175,18 @@ def main(scr):
 
         data_fallscreen=[]
         command_fall_screen=[]
-
         command_fall_screen.append("gate@root:~ Connecting to Serial "+COM+"...")
         command_fall_screen.append("gate@root:~ Serial Connection Success")
         command_fall_screen.append("gate@root:~ Transferring to data fall screen...")
 
+        def photoToText(fileName):
+            filePhoto=fileName+'.png'
+            with open(filePhoto, 'rb') as imageFile:
+                str = base64.b64encode(imageFile.read()).decode('utf-8')
+            return str
+        def textToPhoto(photoTextRaw):
+            with open(filePhoto, 'wb') as fh:
+                fh.write(base64.decodebytes(photoTextRaw.encode('utf-8')))
         def convertTuple(tup):
             str = ''
             for item in tup:
@@ -249,7 +305,7 @@ def main(scr):
                     dataset_de=dataset_de+datasets_de[x]
                 dataset_de=axde(dataset_de,KEY)
 
-                if (len(dataset_de)==int(datasize)) and (datasize != 0) and (NODE_CACHE!="NULL") and (datasize!=0):
+                if (len(dataset_de)==int(datasize)) and (datasize != 0) and (NODE_CACHE!="NULL"):
                     command_fall_screen.append("gate@root:~ Transmit Succes No Packet Loss")
 
                     data_call(NODE_CACHE,dataset_de)
@@ -260,6 +316,7 @@ def main(scr):
                     win_call()
             else:
                 pass
+
             win_call()
             sendbox_call("RX",PACKAGE_QUE)
         def win_call():
@@ -414,17 +471,14 @@ def main(scr):
             sendbox.addstr(6,2,str(" [Node: "+NODE+" / Port: "+COM+" / Baud Rate: "+str(BAUD)+" / KEY: key"+str(KEY)+".ax]"))
             sendbox.refresh()
 
-
         win_call()
         MODE="RX"
         tx_id_count=0
+
         while True:
-
-
             if newMessageCheck()>=1:
                 cursor.execute("SELECT msg,confirm FROM tx;")
                 SQL_TX_DATA=cursor.fetchall()
-
                 for x in range(0,len(SQL_TX_DATA)):
                     if SQL_TX_DATA[x][1]=="negative":
                         cursor.execute('Update tx set confirm ="{}" where tx_id = {}'.format("positive",x+1))
@@ -432,15 +486,11 @@ def main(scr):
                         MODE="TX"
                         db.commit()
                         break
-
-
             if MODE=="IDLE":
                 pass
-
             elif MODE=="TX":
                 TX(DATA,NODE)
                 MODE="RX"
-
             elif MODE=="RX":
                 RX()
 
@@ -449,48 +499,5 @@ def main(scr):
     curses.wrapper(main)
     curses.wrapper(sendbox)
 
-
-
-def module_config():
-    global db
-    global cursor
-    global COM
-    global NODE
-    global KEY
-    global so
-    global se
-    global BAUD
-    global datasize
-    global PORTS
-    global NODE_CACHE
-    global MODE
-    global datasets_de
-    global dataset_de
-    global PACKAGE_QUE
-    PACKAGE_QUE=0
-    BAUD=115200
-    datasize=0
-    NODE_CACHE="NULL"
-    MODE="IDLE"
-    datasets_de=[]
-    dataset_de=""
-    so="STREAM-ORIGIN"
-    se="STREAM-END"
-
-    db = sqlite3.connect('ghostprotocol.db')
-    cursor = db.cursor()
-
-    def convertTuple(tup):
-        str = ''
-        for item in tup:
-            str = str + item
-        return str
-
-    cursor.execute("SELECT settings FROM conf;")
-    datacache=cursor.fetchall()
-    NODE=convertTuple(datacache[0])
-    COM=convertTuple(datacache[1])
-    KEY=int(convertTuple(datacache[2]))
-    datacache=[]
 module_config()
 curses.wrapper(main)
