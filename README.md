@@ -5,7 +5,7 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 <center>
   
 | Stages      | Improvement                         | Status |
-| ----------- | ----------------------------------- | ------ |
+| :---------: | :---------------------------------: | :----: |
 | First       | Message transfer                    |✅      |
 | Second      | Image transfer                      |❌      |
 | Third       | Real-time streaming and mobile mesh |❌      |
