@@ -12,8 +12,8 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | Second      | Image transfer                      |❌      |
 | Third       | Real-time streaming and mobile mesh |❌      |
 
-| Network Speed | Range |
-| ----------- | ----------- |
-| 4kb/s | 120 Meter |
+| Network Speed | Range       | Module   |
+| ------------- | ----------- | -------- |
+| 3.7kb/s       | 120 Meter   | nrf24l01 |
 
 </div>
