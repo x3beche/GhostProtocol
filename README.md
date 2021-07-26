@@ -4,9 +4,6 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 
 <p>&nbsp;</p>
 
-## Project stages of the nrf24l01 module
-
-
 <div align="center">  
 
 | Stages      | Improvement                               | Status |
