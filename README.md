@@ -13,7 +13,7 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | Third       | Real-time streaming and mobile mesh |❌      |
 
 | Network Speed | Range       | Module    |
-| ------------- | ----------- | --------- |
+| :-----------: | ----------- | --------- |
 | 3.7kb/s       | 120 Meter   | [nrf24l01+](https://www.nordicsemi.com/Products/nRF24-series) |
 
 </div>
