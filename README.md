@@ -14,10 +14,11 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | ----------- | ----------- |
 | 4kb/s | 120 Meter |
 
+ </center>
  
 <p>&nbsp;</p>
 <p align="center">
 <img width="900" height="653" src="https://raw.githubusercontent.com/x3beche/GhostProtocol/main/Documents/gp.png">
 </p>
 
-</center>
+
