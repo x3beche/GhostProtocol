@@ -3,11 +3,13 @@ from serial.tools.list_ports import comports
 from serial import Serial
 from time import sleep,time
 
+# Returns a list of devices on which ports
 def portChecker():
     PORTS=[]
     for i in comports():PORTS.append(str(i).split(" ")[0])
     return PORTS
 
+# Main nrf24l01 object 
 class nrf24l01:
 
     # Module initialization 
@@ -53,7 +55,7 @@ class nrf24l01:
             if    direction==True  : return axen(data,self.key) # Encryption
             elif  direction==False : return axde(data,self.key) # Decryption
         else: raise ValueError('The encryption algorithm you entered is not available in the system.')
-    
+
     # See the specifications of the object
     @property
     def cardSpec(self):
@@ -74,100 +76,109 @@ class nrf24l01:
 
     # Transmitting module
     def tx(self, data):
-        
+        while True:
+            if self.mode!="RX":
+                self.mode = "TX" # Posting module status to the object
 
-        # Initial preparation for sending data
-        startTime=time()
-        incorrectTransmissions = 0
-        correctTransmissions = 0
-        self.mode = "TX" # Posting module status to the object
-        data = self.masterCrypter(data,True) # Data encryption
-        datasets = [data[i:i+self.packetSize] for i in range(0, len(data), self.packetSize)] # Split data into sets of 28 bytes
+                # Initial preparation for sending data
+                startTime=time()
+                incorrectTransmissions = 0
+                correctTransmissions = 0
+                data = self.masterCrypter(data,True) # Data encryption
+                datasets = [data[i:i+self.packetSize] for i in range(0, len(data), self.packetSize)] # Split data into sets of 28 bytes
 
-        # Flags the channel for the start of the broadcast, if not confirmed the broadcast will not start
-        error_value=False 
-        tx_start=self.streamOriginFlag+"+"+str(len(data))+"+"+self.nodeId+"\r\n"   # preparing origin flag
-        self.ser.write(tx_start.encode())                                          # sending origin flag
-        readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
-            
-        # # If the message transmission is not confirmed, 
-        # it must be repeated until the timeout is reached.
-        if readline=="code[417]":
-            error_value=True
-            while error_value==True:
-                incorrectTransmissions+=1
-                self.ser.write(tx_start.encode())
-                readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-                if readline=="code[200]" : 
-                    error_value=False
-        correctTransmissions+=1
+                # Flags the channel for the start of the broadcast, if not confirmed the broadcast will not start
+                error_value=False 
+                tx_start=self.streamOriginFlag+"+"+str(len(data))+"+"+self.nodeId+"\r\n"   # preparing origin flag
+                self.ser.write(tx_start.encode())                                          # sending origin flag
+                readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
+                    
+                # # If the message transmission is not confirmed, 
+                # it must be repeated until the timeout is reached.
+                if readline=="code[417]":
+                    error_value=True
+                    while error_value==True:
+                        incorrectTransmissions+=1
+                        self.ser.write(tx_start.encode())
+                        readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
+                        if readline=="code[200]" : 
+                            error_value=False
+                correctTransmissions+=1
 
-        # Sending the main data
-        for x in range(0,len(datasets)):
-            data=datasets[x]+"\r\n"
-            self.ser.write(data.encode())
-            readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-            if readline=="code[417]":
-                error_value=True
-                while error_value==True:
-                    incorrectTransmissions+=1
+                # Sending the main data
+                for x in range(0,len(datasets)):
+                    data=datasets[x]+"\r\n"
                     self.ser.write(data.encode())
                     readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-                    if readline=="code[200]":
-                        error_value=False
-            correctTransmissions+=1
+                    if readline=="code[417]":
+                        error_value=True
+                        while error_value==True:
+                            incorrectTransmissions+=1
+                            self.ser.write(data.encode())
+                            readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
+                            if readline=="code[200]":
+                                error_value=False
+                    correctTransmissions+=1
 
-        # It marks the end of the broadcast, if it is not confirmed, the broadcast will not end until the timeout has passed.
-        error_value=False 
-        tx_stop="STREAM-END\r\n"                                                   # preparing origin flag
-        self.ser.write(tx_stop.encode())                                           # sending origin flag
-        readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
-            
-        # # If the message transmission is not confirmed, 
-        # it must be repeated until the timeout is reached.
-        if readline=="code[417]":
-            error_value=True
-            while error_value==True:
-                incorrectTransmissions+=1
-                self.ser.write(data.encode())
-                readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-                if readline=="code[200]":
-                    error_value=False
-        correctTransmissions+=1
-        endTime = time()
-        self.totalIncorrectTransmissions += incorrectTransmissions
-        self.totalCorrectTransmissions += correctTransmissions
-        return {"success":correctTransmissions,"failed":incorrectTransmissions,"time":endTime-startTime}
-
+                # It marks the end of the broadcast, if it is not confirmed, the broadcast will not end until the timeout has passed.
+                error_value=False 
+                tx_stop="STREAM-END\r\n"                                                   # preparing origin flag
+                self.ser.write(tx_stop.encode())                                           # sending origin flag
+                readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
+                    
+                # # If the message transmission is not confirmed, 
+                # it must be repeated until the timeout is reached.
+                if readline=="code[417]":
+                    error_value=True
+                    while error_value==True:
+                        incorrectTransmissions+=1
+                        self.ser.write(data.encode())
+                        readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
+                        if readline=="code[200]":
+                            error_value=False
+                correctTransmissions+=1
+                endTime = time()
+                self.totalIncorrectTransmissions += incorrectTransmissions
+                self.totalCorrectTransmissions += correctTransmissions
+                self.mode = "IDLE" # Posting module status to the object
+                return {"success":correctTransmissions,"failed":incorrectTransmissions,"time":endTime-startTime}
+            else : self.mode = "TX"
     # Receiving mode
     def rx(self):
-        if (self.ser.inWaiting()>0):
-            datasets_de=[]
-            dataset_de=""
-            NODE_CACHE = ""
+        if (self.ser.inWaiting()>0) and self.mode!="TX":
+            self.mode = "RX" # Posting module status to the object
+            datasets=[]
+            datasetForDecrypt=""
+            nodeRxUser = ""
             datasize=0
             a = self.ser.readline()[:-2].decode('utf-8', errors='replace').rstrip("\x00").rstrip("\r")
             if a[:13]==self.streamOriginFlag:
                 datasize=a.split("+")[1]
-                NODE_CACHE=a.split("+")[2]
+                nodeRxUser=a.split("+")[2]
                 cont=True
-                datasets_de.append(a)
-
+                datasets.append(a)
+                self.totalReceived+=1
 
                 while cont==True:
                     a = self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-                    if a==datasets_de[-1]:
+                    if a==datasets[-1]:
                         pass
                     else:
-                        datasets_de.append(a)
+                        self.totalReceived+=1
+                        datasets.append(a)
                     if a[:10]==self.streamEndFlag:
+                        self.totalReceived+=1
                         cont=False
 
-            for x in range(1,len(datasets_de)-1):
-                dataset_de=dataset_de+datasets_de[x]
-            dataset_de=self.masterCrypter(dataset_de,False)
+            for x in range(1,len(datasets)-1):
+                datasetForDecrypt=datasetForDecrypt+datasets[x]
+            datasetForDecrypt=self.masterCrypter(datasetForDecrypt,False)
 
-            if (len(dataset_de)==int(datasize)) and (datasize != 0) and (NODE_CACHE!="NULL"):
-                return(dataset_de)
+            if (len(datasetForDecrypt)==int(datasize)) and (datasize != 0) and (nodeRxUser!="NULL"): 
+                self.mode = "IDLE" # Posting module status to the object
+                return {"node":nodeRxUser,"data":datasetForDecrypt}
+            else: 
+                self.mode = "IDLE" # Posting module status to the object
+                return "Fail"
         else:
             pass
