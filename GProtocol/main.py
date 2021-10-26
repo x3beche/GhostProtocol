@@ -1,8 +1,6 @@
 import threading
-from ax45sEngine.algorithms import trans
 from ghostprotocol import nrf24l01,portChecker
-from random import randint
-from time import sleep
+
 
 # Port Selection
 ports = portChecker()
@@ -21,7 +19,8 @@ def transmitter():
         #s,f,t = m.tx(input()).values()
         #print(f"Total Success : {m.totalCorrectTransmissions} | Total Failed {m.totalIncorrectTransmissions} | Success : {s} | Failed {f} | Time Elapsed : {t}")
 
-# Setting receiver side
+# Setting receiver side1
+
 def receiver():
     while True:
         cache = nrf.rx()
@@ -32,8 +31,8 @@ def receiver():
             except: pass
 
 
-t1 = threading.Thread(target=transmitter)
+#t1 = threading.Thread(target=transmitter)
 t2 = threading.Thread(target=receiver)
 
-t1.start()
+#t1.start()
 t2.start()

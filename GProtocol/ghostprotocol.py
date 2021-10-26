@@ -6,13 +6,13 @@ from time import sleep,time
 # Returns a list of devices on which ports
 def portChecker():
     PORTS=[]
-    for i in comports():PORTS.append(str(i).split(" ")[0])
+    for i in comports(): PORTS.append(str(i).split(" ")[0])
     return PORTS
 
 # Main nrf24l01 object 
 class nrf24l01:
 
-    # Module initialization 
+    # Required definitions and initialization of the module
     def __init__(self,port,node_id,key,encryptionModule):
         
         # Module configurations :
@@ -96,7 +96,7 @@ class nrf24l01:
         while True:
             if self.mode!="RX":
                 self.mode = "TX" # Posting module status to the object
-
+                
                 # Initial preparation for sending data
                 startTime=time()
                 incorrectTransmissions = 0
@@ -106,7 +106,7 @@ class nrf24l01:
 
                 # Flags the channel for the start of the broadcast, if not confirmed the broadcast will not start
                 error_value=False 
-                tx_start=self.streamOriginFlag+"+"+str(len(data))+"+"+self.nodeId+"\r\n"   # preparing origin flag
+                tx_start=self.masterCrypter("STREAM-ORIGIN"+"+"+str(len(data))+"+"+self.nodeId,True)+"\r\n"   # preparing origin flag
                 self.ser.write(tx_start.encode())                                          # sending origin flag
                 readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
                     
@@ -121,6 +121,7 @@ class nrf24l01:
                         if readline=="code[200]" : 
                             error_value=False
                 correctTransmissions+=1
+                
 
                 # Sending the main data
                 for x in range(0,len(datasets)):
@@ -139,7 +140,7 @@ class nrf24l01:
 
                 # It marks the end of the broadcast, if it is not confirmed, the broadcast will not end until the timeout has passed.
                 error_value=False 
-                tx_stop="STREAM-END\r\n"                                                   # preparing origin flag
+                tx_stop=self.streamEndFlag+"\r\n"                                                   # preparing origin flag
                 self.ser.write(tx_stop.encode())                                           # sending origin flag
                 readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
                     
@@ -171,6 +172,7 @@ class nrf24l01:
             datasize=0
             a = self.ser.readline()[:-2].decode('utf-8', errors='replace').rstrip("\x00").rstrip("\r")
             if a[:13]==self.streamOriginFlag:
+                a = self.masterCrypter(a, False)
                 datasize=a.split("+")[1]
                 nodeRxUser=a.split("+")[2]
                 cont=True
