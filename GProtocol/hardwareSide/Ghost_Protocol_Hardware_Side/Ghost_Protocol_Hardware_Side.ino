@@ -11,7 +11,7 @@
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
-#define CE_PIN   7
+#define CE_PIN  7
 #define CSN_PIN 8
 RF24 radio(CE_PIN, CSN_PIN); // Create a Radio
 
@@ -19,19 +19,23 @@ RF24 radio(CE_PIN, CSN_PIN); // Create a Radio
 const uint64_t deviceID = 0xE8E8F0F0E1LL;
 
 const byte numChars = 32;
+byte ackMessgLen = 4; // NB this 4 is the number of bytes in the 2 ints that will be recieved
+
 char  dataToSend[numChars];
 char  dataReceived[32];
+char  ackData[2] = {1,2};
+char  ackMessg[2]= {1,2};
 
 boolean newData = false;
-char ackMessg[2]={1,2};
-byte ackMessgLen = 4; // NB this 4 is the number of bytes in the 2 ints that will be recieved
-char  ackData[2] = {1,2};
+
+
 
 
 
 
 void setup() {
     Serial.begin(115200);
+    printf_begin();
     radio.begin();
     radio.setDataRate( RF24_2MBPS );
     radio.setPALevel(RF24_PA_MAX);
@@ -42,10 +46,7 @@ void setup() {
     radio.writeAckPayload(1, ackData, sizeof(ackData));
     radio.setRetries(15,15); // delay, count
     pinMode(2, OUTPUT);
-    //printf_begin();
-    //radio.printDetails();
-    
-    
+    radio.printDetails();
 }
 
 

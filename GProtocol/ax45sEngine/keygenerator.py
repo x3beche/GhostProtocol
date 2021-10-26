@@ -1,38 +1,29 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import random,time
+from random import randint
+from json import dump
 
-def rnlm():
-    rn=[]
-    f=True
-    while f==True:
-        r=random.randint(1,94)
-        if rn.count(r)==0:
-            rn.append(r)
-        if len(rn)==94:
-            f=False
-    return rn
-rl=[[],[]]
-rll=[[],[]]
-for x in range(32,127):
-    rl[0].append(chr(x))
+# entering values
+key, json_data, regularKey, randomFileNumber = {}, {}, [[],[]], randint(1,10**4)
 
-rl[1]=rnlm()
-for y in range(1,95):
-    for z in range(0,94):
-        if y==rl[1][z]:
-            rll[1].append(y)
-            rll[0].append(rl[0][z])
-rfn=random.randint(1,10**4)
+# this function generating numbers in random order in the range from 1 to 94
+def randomNumbers():
+    randomNumberArray=[]
+    while len(randomNumberArray)!=94:
+        randomNumber=randint(1,94)
+        if randomNumber not in randomNumberArray: randomNumberArray.append(randomNumber)
+    return randomNumberArray
 
-fn="key"+str(rfn)+".ax"
-f = open(fn, "a")
-for a in range(0,94):
-    f.write(str(rll[1][a]))
-    f.write("axen")
-    f.write(rll[0][a])
-    if a==len(rl[0])-1:
-        pass
-    else:
-        f.write("split")
-f.close()
+# generating a random key by matching the irregularly
+# ordered set of numbers with the regularly ordered character set
+irregularKey=[[chr(x) for x in range(32,127)],randomNumbers()]
+
+# arranging the key in an orderly sequence to make it ready for use
+for x in range(1,95):
+    for y in range(0,94):
+        if x==irregularKey[1][y]: regularKey[1].append(x), regularKey[0].append(irregularKey[0][y])
+
+# arranging data in dictionary type
+for x in range(0,94): key.update({regularKey[1][x]:regularKey[0][x]})
+json_data.update({"algorithm":"AX45-S","layer":1,"key":key})
+
+# saving data in json format to file with .ax extension
+with open("key"+str(randomFileNumber)+".ax","w",encoding="UTF-8") as file: dump(json_data,file,ensure_ascii=False,indent=2)

@@ -11,24 +11,26 @@ port = ports[int(input("Select Port : "))-1]
 nodeID = input("nodeID >> ")
 
 # Creating the nrf24l01 object
-m = nrf24l01(port,nodeID,"237415","AX45-S") # Creating object nrf24l01
-print(m.cardSpec) # See the properties of the object
+nrf = nrf24l01(port,nodeID,"237415","AX45-S") # Creating object nrf24l01
+print(nrf.cardSpec) # See the properties of the object
 
 # Setting transmitter side
 def transmitter():
     while True:
-        m.tx(input())
+        nrf.tx(input())
         #s,f,t = m.tx(input()).values()
         #print(f"Total Success : {m.totalCorrectTransmissions} | Total Failed {m.totalIncorrectTransmissions} | Success : {s} | Failed {f} | Time Elapsed : {t}")
 
 # Setting receiver side
 def receiver():
     while True:
-        cache = m.rx()
+        cache = nrf.rx()
         if cache != None:
-            node = cache["node"]
-            data = cache["data"]
-            print(f"{node} >> {data}")
+            try:
+                node, data = cache["node"], cache["data"]
+                print(f"{node} >> {data}")
+            except: pass
+
 
 t1 = threading.Thread(target=transmitter)
 t2 = threading.Thread(target=receiver)

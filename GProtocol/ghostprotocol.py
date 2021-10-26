@@ -1,7 +1,7 @@
 from ax45sEngine.algorithms import axen,axde
 from serial.tools.list_ports import comports
 from serial import Serial
-from time import sleep,time
+from time import sleep,time 
 
 # Returns a list of devices on which ports
 def portChecker():
@@ -15,18 +15,19 @@ class nrf24l01:
     # Module initialization 
     def __init__(self,port,node_id,key,encryptionModule):
         
-        # Module configurations : 
+        # Module configurations :
+        self.radioDetails     = [] # Information from the radio, variables will come in the initialization part
+        self.portTimeout      = 5  # Where to use : module initialization
         self.timeOutShort     = 5  # Where to use : when sending data
         self.timeOutLong      = 15 # Where to use : to send start and end flags
         self.encryptionModule = encryptionModule # Setting crypto module
-        self.moduleModel      = "nrf24l01" # Module name
-        self.port             = port # Setting COM port
+        self.port             = port    # Setting COM port
         self.nodeId           = node_id # Setting node id
-        self.key              = key # Setting key file
-        self.baud             = 115200 # Setting baud rate
-        self.mode             = "IDLE" # Setting Mode
-        self.streamOriginFlag = "STREAM-ORIGIN" #self.masterCrypter("STREAM-ORIGIN",True) # Calculating the origin flag
-        self.streamEndFlag    = "STREAM-END" #self.masterCrypter("END-STREAM",True) # Calculating the end flag
+        self.key              = key     # Setting key file
+        self.baud             = 115200  # Setting baud rate
+        self.mode             = "IDLE"  # Setting Mode
+        self.streamOriginFlag = self.masterCrypter("STREAM-ORIGIN",True) # Calculating the origin flag
+        self.streamEndFlag    = self.masterCrypter("END-STREAM",True)    # Calculating the end flag
         
         # Packet size : nrf24l01 transmits 32 bits, but \r\n added to the end 
         # of the message gives a total of 4 bits, 28 bits set plus 4 bits gives a total of 32 bits )
@@ -37,15 +38,49 @@ class nrf24l01:
         self.totalCorrectTransmissions = 0
         self.totalReceived = 0
 
-        # Module Initialization : 
+        # Module Initialization
+        self.moduleInit()
+
+    # Module Initialization function for making sure the correct module is connected and initialized successfully
+    def moduleInit(self):
         try:
             self.ser = Serial(self.port,self.baud) # Serial connection to module
             sleep(1) # Connection timeout
-            print("RESPOND :: Module initialized successfully")
-        except:
-            print("ERROR :: There was an error connecting to the card, make sure you entered the data correctly!")
-            exit()
-        
+            start_time = time()
+            while True:
+                end_time = time()
+                if self.ser.inWaiting()>0: self.radioDetails.append(self.ser.readline()[:-2].decode('utf-8', errors='replace').rstrip("\x00").rstrip("\r"))
+                if len(self.radioDetails)==17:
+                    for x in range(0,len(self.radioDetails)): self.radioDetails[x]=self.radioDetails[x].split("=")[1].strip()
+                    if self.radioDetails[13]=="nRF24L01+" or self.radioDetails[13]=="nRF24L01": 
+                        print("RESPOND :: Module initialized successfully")
+                        break
+                if end_time-start_time>self.portTimeout: print("ERROR :: Module doesn't confirmed by main core! Make sure that the cable connections to the communication card are correct. "),exit()
+        except: print("ERROR :: There was an error connecting to the card, make sure you entered the data \ncorrectly or the card is not run with another program!"),exit()
+    
+    # See the specifications of the object
+    @property
+    def cardSpec(self):
+        return f"""
+        portTimeout      = {self.portTimeout} sec
+        timeOutShort     = {self.timeOutShort} sec
+        timeOutLong      = {self.timeOutLong} sec
+        encryptionModule = {self.encryptionModule}
+        dataRate         = {self.radioDetails[12]}
+        moduleModel      = {self.radioDetails[13]}
+        CRC Length       = {self.radioDetails[14]}
+        PA Power         = {self.radioDetails[15]}
+        Pipe Addres      = {self.radioDetails[2].split(" ")[1]}
+        port             = {self.port}
+        nodeId           = {self.nodeId}
+        keyFileID        = {self.key}
+        baudRate         = {self.baud}
+        GPPacketSize     = {(self.packetSize+4)*8} bits
+        mode             = {self.mode}
+        streamOriginFlag = {self.streamOriginFlag}
+        streamEndFlag    = {self.streamEndFlag}
+        """
+    
     # Main crypto handler
     def masterCrypter(self,data,direction):
         # Direction :
@@ -55,25 +90,7 @@ class nrf24l01:
             if    direction==True  : return axen(data,self.key) # Encryption
             elif  direction==False : return axde(data,self.key) # Decryption
         else: raise ValueError('The encryption algorithm you entered is not available in the system.')
-
-    # See the specifications of the object
-    @property
-    def cardSpec(self):
-        return f"""
-        timeOutShort     = {self.timeOutShort} sec
-        timeOutLong      = {self.timeOutLong} sec
-        encryptionModule = {self.encryptionModule}
-        moduleModel      = {self.moduleModel}
-        port             = {self.port}
-        nodeId           = {self.nodeId}
-        keyFileID        = {self.key}
-        baudRate         = {self.baud}
-        packetSize       = {(self.packetSize+4)*8} bit
-        mode             = {self.mode}
-        streamOriginFlag = {self.streamOriginFlag}
-        streamEndFlag    = {self.streamEndFlag}
-        """
-
+    
     # Transmitting module
     def tx(self, data):
         while True:
@@ -143,6 +160,7 @@ class nrf24l01:
                 self.mode = "IDLE" # Posting module status to the object
                 return {"success":correctTransmissions,"failed":incorrectTransmissions,"time":endTime-startTime}
             else : self.mode = "TX"
+    
     # Receiving mode
     def rx(self):
         if (self.ser.inWaiting()>0) and self.mode!="TX":
