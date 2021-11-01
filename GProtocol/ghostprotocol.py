@@ -1,7 +1,9 @@
 from ax45sEngine.algorithms import axen,axde
 from serial.tools.list_ports import comports
 from serial import Serial
-from time import sleep,time 
+from time import sleep,time
+from base64 import b64decode,b64encode
+from json import loads,dumps
 
 # Returns a list of devices on which ports
 def portChecker():
@@ -37,9 +39,6 @@ class nrf24l01:
         self.totalIncorrectTransmissions = 0
         self.totalCorrectTransmissions = 0
         self.totalReceived = 0
-
-        # Module Initialization
-        self.moduleInit()
 
     # Module Initialization function for making sure the correct module is connected and initialized successfully
     def moduleInit(self):
@@ -81,6 +80,21 @@ class nrf24l01:
         streamEndFlag    = {self.streamEndFlag}
         """
     
+    # Functions for data operations
+    def msgTX(self,data):
+        return self.tx(dumps({"dataType":"msg","data":data}))
+    def msgRX(self,node,data):
+        return {"node":node,"data":data}
+    def fileTX(self,fileInput):
+        with open(fileInput,"rb") as file: 
+            try : fileName,fileType,data = fileInput.rsplit('.', 1)[0],fileInput.rsplit('.', 1)[1],b64encode(file.read()).decode()
+            except : print("Wrong file format! The file must have an extension."),exit()
+        return self.tx(dumps({"dataType":"file","fileName":fileName,"fileType":fileType,"data":data}))
+    def fileRX(self,node,data):
+        fileName = data["fileName"]+"."+data["fileType"]
+        with open(fileName,"wb") as file: file.write(b64decode(data["data"].encode()))
+        return {"node":node,"data":fileName+" saved in main directiory."}
+
     # Main crypto handler
     def masterCrypter(self,data,direction):
         # Direction :
@@ -94,7 +108,7 @@ class nrf24l01:
     # Transmitting module
     def tx(self, data):
         while True:
-            if self.mode!="RX":
+            if self.mode=="IDLE":
                 self.mode = "TX" # Posting module status to the object
                 
                 # Initial preparation for sending data
@@ -160,25 +174,22 @@ class nrf24l01:
                 self.totalCorrectTransmissions += correctTransmissions
                 self.mode = "IDLE" # Posting module status to the object
                 return {"success":correctTransmissions,"failed":incorrectTransmissions,"time":endTime-startTime}
-            else : self.mode = "TX"
-    
+  
     # Receiving mode
     def rx(self):
         if (self.ser.inWaiting()>0) and self.mode!="TX":
             self.mode = "RX" # Posting module status to the object
             datasets=[]
             datasetForDecrypt=""
-            nodeRxUser = ""
-            datasize=0
             a = self.ser.readline()[:-2].decode('utf-8', errors='replace').rstrip("\x00").rstrip("\r")
+            
             if a[:13]==self.streamOriginFlag:
                 a = self.masterCrypter(a, False)
-                datasize=a.split("+")[1]
+                dataSize=a.split("+")[1]
                 nodeRxUser=a.split("+")[2]
                 cont=True
                 datasets.append(a)
                 self.totalReceived+=1
-
                 while cont==True:
                     a = self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
                     if a==datasets[-1]:
@@ -190,15 +201,17 @@ class nrf24l01:
                         self.totalReceived+=1
                         cont=False
 
-            for x in range(1,len(datasets)-1):
-                datasetForDecrypt=datasetForDecrypt+datasets[x]
-            datasetForDecrypt=self.masterCrypter(datasetForDecrypt,False)
+            for x in range(1,len(datasets)-1): datasetForDecrypt+=datasets[x]
+            datasetDecrypted=self.masterCrypter(datasetForDecrypt,False)
 
-            if (len(datasetForDecrypt)==int(datasize)) and (datasize != 0) and (nodeRxUser!="NULL"): 
-                self.mode = "IDLE" # Posting module status to the object
-                return {"node":nodeRxUser,"data":datasetForDecrypt}
+            if (len(datasetDecrypted)==int(dataSize)) and (dataSize != 0): 
+                
+                self.mode,json_data = "IDLE",loads(datasetDecrypted) # Posting module status to the object
+                if json_data["dataType"] == "msg": return self.msgRX(nodeRxUser,json_data["data"])
+                elif json_data["dataType"] == "file": return self.fileRX(nodeRxUser,json_data)
+                else: return "Wrong data format!"
+            
             else: 
                 self.mode = "IDLE" # Posting module status to the object
                 return "Fail"
-        else:
-            pass
+        else: pass
