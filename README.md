@@ -9,7 +9,7 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | Stages      | Improvement                               | Status |
 | ----------- | ----------------------------------------- | :----: |
 | First       | Message transfer                          |✅      |
-| Second      | Image transfer                            |❌      |
+| Second      | File transfer                             |✅      |
 | Third       | Real-time audio streaming and mobile mesh |❌      |
 
 | Network Speed | Range       | Module    |
