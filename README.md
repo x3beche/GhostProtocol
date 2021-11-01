@@ -10,8 +10,10 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | ----------- | ----------------------------------------- | :----: | :--------: | 
 | First       | Message transfer                          |✅      | 26.07.2021 |
 | Second      | File transfer                             |✅      | 01.11.2021 |
-| Third       | Real-time audio streaming and mobile mesh |❌      |            |
+| Third       | Real-time audio streaming and mobile mesh |❌      |      -     |
 
+<br>
+  
 | Network Speed | Range       | Module    |
 | :-----------: | ----------- | --------- |
 | 29,6 kbps     | 120 Meter   | [nrf24l01+](https://www.nordicsemi.com/Products/nRF24-series) |
