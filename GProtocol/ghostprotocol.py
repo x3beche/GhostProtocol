@@ -9,7 +9,8 @@ from json import loads,dumps
 def portChecker():
     PORTS=[]
     for i in comports(): PORTS.append(str(i).split(" ")[0])
-    return PORTS
+    for i,port in enumerate(PORTS) : print(f"{i+1}-) {port}")
+    return PORTS[int(input("Select Port : "))-1]
 
 # Main nrf24l01 object 
 class nrf24l01:
@@ -25,7 +26,7 @@ class nrf24l01:
         self.encryptionModule = encryptionModule # Setting crypto module
         self.port             = port    # Setting COM port
         self.nodeId           = node_id # Setting node id
-        self.key              = key     # Setting key file
+        self.key              = str(key)     # Setting key file
         self.baud             = 115200  # Setting baud rate
         self.mode             = "IDLE"  # Setting Mode
         self.streamOriginFlag = self.masterCrypter("STREAM-ORIGIN",True) # Calculating the origin flag
@@ -82,6 +83,7 @@ class nrf24l01:
     
     # Functions for data operations
     def msgTX(self,data):
+        #print("JSON Format -> ",dumps({"dataType":"msg","data":data}))
         return self.tx(dumps({"dataType":"msg","data":data}))
     def msgRX(self,node,data):
         return {"node":node,"data":data}
@@ -109,21 +111,34 @@ class nrf24l01:
     def tx(self, data):
         while True:
             if self.mode=="IDLE":
+
                 self.mode = "TX" # Posting module status to the object
-                
+                #sleep(0.1)            
                 # Initial preparation for sending data
+                
                 startTime=time()
                 incorrectTransmissions = 0
                 correctTransmissions = 0
                 data = self.masterCrypter(data,True) # Data encryption
+                #print("Encrpypted -> ",data)
                 datasets = [data[i:i+self.packetSize] for i in range(0, len(data), self.packetSize)] # Split data into sets of 28 bytes
 
+                
                 # Flags the channel for the start of the broadcast, if not confirmed the broadcast will not start
                 error_value=False 
-                tx_start=self.masterCrypter("STREAM-ORIGIN"+"+"+str(len(data))+"+"+self.nodeId,True)+"\r\n"   # preparing origin flag
+                tx_start= self.masterCrypter("STREAM-ORIGIN+"+str(len(data))+"+"+self.nodeId,True)+"\r\n"   # preparing origin flag
                 self.ser.write(tx_start.encode())                                          # sending origin flag
-                readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")     # checking return from module
-                    
+                
+                readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r") 
+                #print(readline)
+
+                #.rstrip("\x00").rstrip("\r")     # checking return from module
+
+                
+                
+                
+                
+                
                 # # If the message transmission is not confirmed, 
                 # it must be repeated until the timeout is reached.
                 if readline=="code[417]":
@@ -132,10 +147,10 @@ class nrf24l01:
                         incorrectTransmissions+=1
                         self.ser.write(tx_start.encode())
                         readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
+
                         if readline=="code[200]" : 
                             error_value=False
                 correctTransmissions+=1
-                
 
                 # Sending the main data
                 for x in range(0,len(datasets)):
@@ -145,9 +160,11 @@ class nrf24l01:
                     if readline=="code[417]":
                         error_value=True
                         while error_value==True:
+
                             incorrectTransmissions+=1
                             self.ser.write(data.encode())
                             readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
+
                             if readline=="code[200]":
                                 error_value=False
                     correctTransmissions+=1
@@ -164,11 +181,12 @@ class nrf24l01:
                     error_value=True
                     while error_value==True:
                         incorrectTransmissions+=1
-                        self.ser.write(data.encode())
+                        self.ser.write(tx_stop.encode())
                         readline=self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
                         if readline=="code[200]":
                             error_value=False
                 correctTransmissions+=1
+                
                 endTime = time()
                 self.totalIncorrectTransmissions += incorrectTransmissions
                 self.totalCorrectTransmissions += correctTransmissions
@@ -178,22 +196,15 @@ class nrf24l01:
     # Receiving mode
     def rx(self):
         if (self.ser.inWaiting()>0) and self.mode!="TX":
-            self.mode = "RX" # Posting module status to the object
-            datasets=[]
-            datasetForDecrypt=""
             a = self.ser.readline()[:-2].decode('utf-8', errors='replace').rstrip("\x00").rstrip("\r")
-            
             if a[:13]==self.streamOriginFlag:
-                a = self.masterCrypter(a, False)
-                dataSize=a.split("+")[1]
-                nodeRxUser=a.split("+")[2]
-                cont=True
+                cont, self.mode, datasets, datasetForDecrypt= True, "RX",[],""
+                _, dataSize, nodeRxUser = self.masterCrypter(a, False).split("+")
                 datasets.append(a)
                 self.totalReceived+=1
                 while cont==True:
                     a = self.ser.readline()[:-2].decode().rstrip("\x00").rstrip("\r")
-                    if a==datasets[-1]:
-                        pass
+                    if a==datasets[-1]: pass
                     else:
                         self.totalReceived+=1
                         datasets.append(a)
@@ -201,17 +212,17 @@ class nrf24l01:
                         self.totalReceived+=1
                         cont=False
 
-            for x in range(1,len(datasets)-1): datasetForDecrypt+=datasets[x]
-            datasetDecrypted=self.masterCrypter(datasetForDecrypt,False)
+                for x in range(1,len(datasets)-1): datasetForDecrypt+=datasets[x]
+                datasetDecrypted=self.masterCrypter(datasetForDecrypt,False)
 
-            if (len(datasetDecrypted)==int(dataSize)) and (dataSize != 0): 
-                
-                self.mode,json_data = "IDLE",loads(datasetDecrypted) # Posting module status to the object
-                if json_data["dataType"] == "msg": return self.msgRX(nodeRxUser,json_data["data"])
-                elif json_data["dataType"] == "file": return self.fileRX(nodeRxUser,json_data)
-                else: return "Wrong data format!"
+                if (len(datasetDecrypted)==int(dataSize)) and (dataSize != 0): 
+                    
+                    self.mode,json_data = "IDLE",loads(datasetDecrypted) # Posting module status to the object
+                    if json_data["dataType"] == "msg": return self.msgRX(nodeRxUser,json_data["data"])
+                    elif json_data["dataType"] == "file": return self.fileRX(nodeRxUser,json_data)
+                    else: return "Wrong data format!"
             
-            else: 
-                self.mode = "IDLE" # Posting module status to the object
-                return "Fail"
+                else: 
+                    self.mode = "IDLE" # Posting module status to the object
+                    return "Fail"
         else: pass

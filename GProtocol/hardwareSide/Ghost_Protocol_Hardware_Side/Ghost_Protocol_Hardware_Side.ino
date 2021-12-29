@@ -21,17 +21,12 @@ const uint64_t deviceID = 0xE8E8F0F0E1LL;
 const byte numChars = 32;
 byte ackMessgLen = 4; // NB this 4 is the number of bytes in the 2 ints that will be recieved
 
-char  dataToSend[numChars];
+char  dataToSend[32];
 char  dataReceived[32];
 char  ackData[2] = {1,2};
 char  ackMessg[2]= {1,2};
 
 boolean newData = false;
-
-
-
-
-
 
 void setup() {
     Serial.begin(115200);
