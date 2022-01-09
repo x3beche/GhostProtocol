@@ -19,7 +19,7 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | 29,6 kbps     | 120 Meter   | [nrf24l01+](https://www.nordicsemi.com/Products/nRF24-series) |
 
   
-  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-1.png" width="600" title="GUI Version I">
-  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="600" title="GUI Version II">
+  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-1.png" width="800" title="GUI Version I">
+  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="800" title="GUI Version II">
   
 </div>
