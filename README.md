@@ -1,4 +1,3 @@
-# GhostProtocol
 
 It stands out with its long distance, low energy and cheap cost. It is currently being developed with nrf24l01 but can be optimized with many modules (like Zigbee and LORA). [Example Photo of Main Framework](https://raw.githubusercontent.com/x3beche/GhostProtocol/main/Documents/gp.png)
 
@@ -6,6 +5,9 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 
 <div align="center">  
 
+   # GUI Version II
+  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="800" title="GUI Version II">
+  
 | Stages      | Improvement                               | Status | Reach Date |
 | ----------- | ----------------------------------------- | :----: | :--------: | 
 | First       | Message transfer                          |✅      | 26.07.2021 |
@@ -17,9 +19,5 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | Network Speed | Range       | Module    |
 | :-----------: | ----------- | --------- |
 | 29,6 kbps     | 120 Meter   | [nrf24l01+](https://www.nordicsemi.com/Products/nRF24-series) |
-
-  
-  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-1.png" width="800" title="GUI Version I">
-  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="800" title="GUI Version II">
   
 </div>
