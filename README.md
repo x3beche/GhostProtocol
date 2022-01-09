@@ -5,8 +5,7 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 
 <div align="center">  
 
-   # GUI Version II
-  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="800" title="GUI Version II">
+
   
 | Stages      | Improvement                               | Status | Reach Date |
 | ----------- | ----------------------------------------- | :----: | :--------: | 
@@ -19,5 +18,11 @@ It stands out with its long distance, low energy and cheap cost. It is currently
 | Network Speed | Range       | Module    |
 | :-----------: | ----------- | --------- |
 | 29,6 kbps     | 120 Meter   | [nrf24l01+](https://www.nordicsemi.com/Products/nRF24-series) |
-  
+   
+   <br>
+   <br>
+   
+  # GUI Version II
+  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="800" title="GUI Version II">
+   
 </div>
