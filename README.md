@@ -23,6 +23,6 @@ It stands out with its long distance, low energy and cheap cost. It is currently
    <br>
    
   # GUI Version II
-  <img src="https://github.com/x3beche/GhostProtocol/blob/main/pdfDocuments/gui-version-2.png" width="600" title="GUI Version II">
+  <img src="https://raw.githubusercontent.com/x3beche/AX45-S/main/pdfDocuments/AX45-S-GUI.png" width="600" title="GUI Version II">
    
 </div>
